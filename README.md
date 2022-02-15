@@ -2,22 +2,34 @@
 
 ## 请求流程
 
-1. WSP Scale ----> WSP Mini Server
+1. **`Scale Device` ----> `WSP Mini Server`**
 
-+ 体脂秤设备在WiFi模式下，通过HTTP请求上传测量数据到WSP Mini（中转服务器）；
-+ WSP Mini（中转服务器）解析体脂秤设备上传的测量数据，响应处理结果给秤端设备。
++ 体脂秤设备（Scale Device）在WiFi模式下，通过HTTP请求上传测量数据到中转服务器（WSP Mini Server）；
++ 中转服务器（WSP Mini Server）解析体脂秤设备（Scale Device）上传的测量数据，并响应处理结果给体脂秤设备（Scale Device）——测量成功或失败。
 
-2. WSP Mini Server  <---->  Client Server
+2. **`WSP Mini Server`  <---->  `Client Server`**
 
-+ WSP Mini（中转服务器）通过HTTP请求从Client Server（客户服务器）获取该体脂秤设备绑定用户列表；
-+ WSP Mini（中转服务器）根据体脂秤设备上传的测量数据以及从Client Server（客户服务器）获取的用户信息生成详细的身体指标报告；
-+ WSP Mini（中转服务器）通过HTTP请求发送身体指标报告数据到Client Server（客户服务器），客户服务器再将该指标报告向用户展示。
++ 中转服务器（WSP Mini Server）通过HTTP请求从客户服务器（Client Server）获取该体脂秤设备（Scale Device）绑定的用户列表；
++ 中转服务器（WSP Mini Server）根据体脂秤设备（Scale Device）上传的测量数据以及从客户服务器（Client Server）获取的用户信息生成详细的身体指标报告；
++ 中转服务器（WSP Mini Server）通过HTTP请求发送身体指标报告数据到客户服务器（Client Server），客户服务器（Client Server）再将该指标报告向用户展示。
 
-> P.S. 以上过程是按照流水线方式一次性执行，其中WSP Mini不会存储任何测量数据或用户信息。
+> P.S. 以上过程是按照流水线方式一次性执行，其中WSP Mini Server不会存储任何测量数据或用户信息。
 
 ## 接口说明
 
-### 一、获取用户列表(客户服务器实现，中转服务器请求)
+### 一、获取秤设备用户列表
+
+#### 请求端
+
+```
+WSP Mini Server
+```
+
+#### 响应端
+
+```
+Client Server
+```
 
 #### 请求方式
 
@@ -25,34 +37,38 @@
 GET
 ```
 
-#### 请求参数
+#### 请求参数说明
 
-| 字段名 | 类型   | 是否必填 | 介绍 | 额外说明                |
-| ------ | ------ | -------- | ---- | ----------------------- |
-| mac    | String | Y        | Mac  | mock: 12:34:56:78:9A:BC |
+| 名称 | 类型   | 是否必须 | 描述          | Mock值            |
+| ---- | ------ | -------- | ------------- | ----------------- |
+| mac  | string | 是       | 秤设备MAC地址 | 12:34:56:78:9A:BC |
+
+#### 请求地址
+
+```
+Client Server提供URL，如：https://www.client-server-domain.com/users
+```
 
 #### 请求参数示例
 
 ```
-{
-    "mac": "12:34:56:78:9A:BC"
-}
+https://www.client-server-domain.com/users?mac=A8:48:FA:35:14:56
 ```
 
-#### 返回参数
+#### 返回参数说明
 
-| 字段名       | 类型    | 是否必填 | 介绍                 | 额外说明         |
-| ------------ | ------- | -------- | -------------------- | ---------------- |
-| users        | array   | Y        | 用户                 | 用户列表         |
-| - user_index | integer | Y        | 秤端用户坑位         | mock: 1          |
-| - gender     | integer | Y        | 性别(男为1 女为0)    | mock: 1          |
-| - height     | number  | Y        | 身高(cm)             | mock: 180.5      |
-| - birthday   | string  | Y        | 生日                 | mock: 1995-06-30 |
-| - weight     | number  | Y        | 用户最近测量体重(kg) | mock: 78.6       |
+| 名称         | 类型    | 是否必须 | 描述                     | Mock值     |
+| ------------ | ------- | -------- | ------------------------ | ---------- |
+| users        | array   | 是       | 秤设备绑定用户列表       | []         |
+| - user_index | integer | 是       | 秤设备端用户占位(1-8)    | 1          |
+| - gender     | integer | 是       | 性别(男为1 女为0)        | 1          |
+| - height     | double  | 是       | 身高(cm)                 | 180.5      |
+| - birthday   | string  | 是       | 生日(YYYY-mm-dd)         | 1995-06-30 |
+| - weight     | double  | 是       | 用户最近一次测量体重(kg) | 78.6       |
 
 #### 返回参数示例
 
-```
+```json
 {
     "users": [{
         "user_index": 1,
@@ -76,7 +92,19 @@ GET
 }
 ```
 
-### 二、上传测量数据(客户服务器实现，中转服务器请求)
+### 二、接收测量指标报告
+
+#### 请求端
+
+```
+WSP Mini Server
+```
+
+#### 响应端
+
+```
+Client Server
+```
 
 #### 请求方式
 
@@ -84,45 +112,51 @@ GET
 POST
 ```
 
-#### 请求参数
+#### 请求参数说明
 
-| 字段名               | 类型    | 是否必填 | 介绍                                                         | 额外说明                     |
-| -------------------- | ------- | -------- | ------------------------------------------------------------ | ---------------------------- |
-| mac                  | string  | Y        | Mac                                                          | mock: 12:34:56:78:9A:BC      |
-| measurements         | array   | Y        | 记录列表                                                     |                              |
-| - user_index         | integer | Y        | 用户在秤端的坑位                                             | mock: 1                      |
-| - timestamp          | integer | Y        | 测量时间戳 (s)                                               | mock: 1582698882             |
-| -hmac                | string  | Y        | 签名                                                         | mock: 183476B32E22B26989A... |
-| -definite_flag       | boolean | Y        | 归属是否明确(true表示该测量数据是当前user_index上的用户测量的) | mock: true                   |
-| - weight             | number  | Y        | 体重 (kg)                                                    | mock: 55.0                   |
-| - heart_rate         | integer | Y        | 心率 (BPM)                                                   | mock: 70                     |
-| - bmi                | number  | Y        | BMI                                                          | mock：20.1                   |
-| - bodyfat            | number  | Y        | 体脂率                                                       | mock：14                     |
-| - fat_free_weight    | number  | Y        | 去脂体重                                                     | mock：50.1                   |
-| - subfat             | number  | Y        | 皮下脂肪                                                     | mock：12.7                   |
-| - visfat             | number  | Y        | 内脏脂肪                                                     | mock：3.46                   |
-| - water              | number  | Y        | 水分                                                         | mock：62.2                   |
-| - bmr                | integer | Y        | 基础代谢                                                     | mock：1451                   |
-| - muscle             | number  | Y        | 骨骼肌率                                                     | mock：55.6                   |
-| - sinew              | number  | Y        | 肌肉量                                                       | mock：47.5                   |
-| - bone               | number  | Y        | 骨量                                                         | mock：2.51                   |
-| - protein            | number  | Y        | 蛋白质                                                       | mock：19.5                   |
-| - score              | number  | Y        | 分数                                                         | mock：90.2                   |
-| - body_age           | integer | Y        | 体年龄                                                       | mock：20                     |
-| - body_shape         | integer | Y        | 体型                                                         | mock：4                      |
-| - cardiac_index      | number  | Y        | 心脏指数                                                     | mock：0                      |
-| -fatty_liver_risk    | integer | Y        | 脂肪肝风险等级                                               | mock：0                      |
-| -fat_weight          | number  | Y        | 脂肪量                                                       | mock：0                      |
-| -obesity             | number  | Y        | 肥胖度                                                       | mock：0                      |
-| -water_content       | number  | Y        | 含水量                                                       | mock：0                      |
-| -protein_quality     | number  | Y        | 蛋白质量                                                     | mock：0                      |
-| -inorganic_salt      | integer | Y        | 无机盐状况                                                   | mock：0                      |
-| -ideal_visual_weight | number  | Y        | 理想视觉体重                                                 | mock：0                      |
-| -standard_weight     | number  | Y        | 标准体重                                                     | mock：0                      |
-| -weight_control      | number  | Y        | 体重控制量                                                   | mock：0                      |
-| -fat_control         | number  | Y        | 脂肪控制量                                                   | mock：0                      |
-| -muscle_control      | number  | Y        | 肌肉控制量                                                   | mock：0                      |
-| -muscle_rate         | number  | Y        | 肌肉率                                                       | mock：0                      |
+| 名称                 | 类型    | 是否必须 | 描述                                                         | Mock值                                           |
+| -------------------- | ------- | -------- | ------------------------------------------------------------ | ------------------------------------------------ |
+| mac                  | string  | 是       | 秤设备MAC地址                                                | 12:34:56:78:9A:BC                                |
+| measurements         | array   | 是       | 测量指标报告列表                                             | []                                               |
+| - user_index         | integer | 是       | 秤设备端用户占位(1-8)                                        | 8                                                |
+| - timestamp          | integer | 是       | 测量时间戳 (UTC)                                             | 1642063478                                       |
+| -hmac                | string  | 是       | 签名密文                                                     | E8B40DEE51140E284782FDFC52E04962D0F71F09BCADD... |
+| -definite_flag       | boolean | 是       | 数据归属是否明确(true表示该测量数据是当前user_index上的用户测量的，否则表示不一定，需要用户认领) | true                                             |
+| - weight             | double  | 是       | 体重 (kg)                                                    | 64.8                                             |
+| - heart_rate         | integer | 是       | 心率 (次/分)                                                 | 82                                               |
+| - bmi                | double  | 是       | 身体质量指数                                                 | 22.4                                             |
+| - bodyfat            | double  | 是       | 体脂率(%)                                                    | 19.3                                             |
+| - fat_free_weight    | double  | 是       | 去脂体重(kg)                                                 | 52.3                                             |
+| - subfat             | double  | 是       | 皮下脂肪率(%)                                                | 17.4                                             |
+| - visfat             | double  | 是       | 内脏脂肪等级                                                 | 5                                                |
+| - water              | double  | 是       | 身体水分率(%)                                                | 58.3                                             |
+| - bmr                | integer | 是       | 基础代谢(kcal)                                               | 1499                                             |
+| - muscle             | double  | 是       | 骨骼肌率(%)                                                  | 52.1                                             |
+| - sinew              | double  | 是       | 肌肉重量(kg)                                                 | 49.7                                             |
+| - bone               | double  | 是       | 骨量(kg)                                                     | 2.62                                             |
+| - protein            | double  | 是       | 蛋白质占比(%)                                                | 18.4                                             |
+| - score              | double  | 是       | 健康分数                                                     | 96.0                                             |
+| - body_age           | integer | 是       | 体年龄                                                       | 18                                               |
+| - body_shape         | integer | 是       | 体型                                                         | 4                                                |
+| - cardiac_index      | double  | 是       | 心脏指数                                                     | 3.3                                              |
+| -fatty_liver_risk    | integer | 否       | 脂肪肝风险等级                                               | 0                                                |
+| -fat_weight          | double  | 否       | 脂肪重量(kg)                                                 | 12.5                                             |
+| -obesity             | double  | 否       | 肥胖度                                                       | 2.86                                             |
+| -water_content       | double  | 否       | 身体水分含量(kg)                                             | 37.8                                             |
+| -protein_quality     | double  | 否       | 蛋白质重量(kg)                                               | 11.9                                             |
+| -inorganic_salt      | integer | 否       | 无机盐状况                                                   | 1                                                |
+| -ideal_visual_weight | double  | 否       | 理想视觉体重(kg)                                             | 63.0                                             |
+| -standard_weight     | double  | 否       | 标准体重(kg)                                                 | 63.0                                             |
+| -weight_control      | double  | 否       | 体重控制量(kg)                                               | -2.78                                            |
+| -fat_control         | double  | 否       | 脂肪控制量(kg)                                               | -2.78                                            |
+| -muscle_control      | double  | 否       | 肌肉控制量(kg)                                               | 0.92                                             |
+| -muscle_rate         | double  | 否       | 肌肉率(%)                                                    | 76.69                                            |
+
+#### 请求地址
+
+```
+Client Server提供URL，如：https://www.client-server-domain.com/measurements
+```
 
 #### 请求参数示例
 
@@ -130,48 +164,51 @@ POST
 {
   "mac": "12:34:56:78:9A:BC",
   "measurements": [{
-      "user_index": 1,
-      "hmac": "70D57038CC39FEA98FBB9A4132B35422752520A027E97ADAE55BD57F9A6EB13A27AD4447D806316227EF96A5979C6F529D15DAF42D7ADD17436739ABE38820CEBF15D58ABAB1F30DAA1EC67362F463A412AAB8BCBA80A594F0B194C197B4C1620BFCF4F7BA5A3743825A7156AEB1F575E22CA4E5BED9237DF838365DFD3E88BA74EDB0AD7F0809DF7DCF4C2F3EA67387C8EE85C25E83044940675FB31BF693239A37E23247F60E651ABD3885BBEAE29CC8EE85C25E83044940675FB31BF69323DA10A0956A1709A0E895FA7740EEB9A1AC7AC7A1F0A2D8365BD261D0FA6C50398A2AF8A4D7003A75E5178E2B52A7502BAE53A619BDE39B1C8098C6A00D4220AF589D389ABEE16D80F5C7E2109E79B95BC7AE52DD296697750F6484B0AB29AD92B5FCABF2E71CDB5F15D89A04A5B01EE13EB4C3F4DB748ACFFBDF4F227478ED69A59A1592642C7420F52D6787F337ADAE9106A14693CEC5AD814D14CEACFC8005BD39289E27ECE343F4B0CF99BCB4DBC950F76FEFB0867ED0932DE5635872AA65CA97902A2898C323861883E1B51E9F5B",
-      "timestamp": 1527855059,
-      "weight": 55.0,
-      "heart_rate": 70,
+      "user_index": 8,
+      "hmac": "E8B40DEE51140E284782FDFC52E04962D0F71F09BCADD84CE44B6A3013BBB06AA6A9A7DD1970DD6A94D81F7CCE2C7D4A5338D5F8D64923C32E459BE7D33D190D15F7FC15BA30203CE10C654EAD8FD409BF5308AED7E1A1C9788156DE25B1D7007FABBB123AD3D6B058E84327BF97953C87558F57C804B7069B8B34B88889E48267560A3B803C4652C9966B9DE5D9BBD2",
+      "timestamp": 1642063478,
+      "weight": 64.8,
+      "heart_rate": 82,
       "bmi": 20.1,
       "bodyfat": 14,
       "fat_free_weight": 50.1,
       "subfat": 12.7,
-      "visfat": 3.4671535888517173,
+      "visfat": 3.4,
       "water": 62.2,
       "bmr": 1451,
       "muscle": 55.6,
       "sinew": 47.5,
       "bone": 2.51,
       "protein": 19.5,
-      "score": 90.2,
-      "body_age": 20,
+      "score": 96.0,
+      "body_age": 18,
       "body_shape": 4,
-      "heart_rate": 0,
-      "cardiac_index": 0,
-      "fatty_liver_risk": 2,
-      "fat_weight": 8.1,
-      "obesity": 1,
-      "water_content": 2,
-      "protein_quality": 2,
-      "inorganic_salt": 2,
-      "ideal_visual_weight": 60,
-      "standard_weight": 22,
-      "weight_control": 2,
-      "fat_control": 2,
-      "muscle_control": 2,
-      "muscle_rate": 1,
+      "cardiac_index": 3.3,
+      "fatty_liver_risk": 0,
+      "fat_weight": 12.5,
+      "obesity": 2.86,
+      "water_content": 37.8,
+      "protein_quality": 11.9,
+      "inorganic_salt": 1,
+      "ideal_visual_weight": 63.0,
+      "standard_weight": 63.0,
+      "weight_control": -2.78,
+      "fat_control": -2.78,
+      "muscle_control": 0.92,
+      "muscle_rate": 76.69,
       "definite_flag": true
   }]
 }
 ```
 
+#### 返回参数说明
+
+| 名称    | 类型   | 是否必须 | 描述             | Mock值  |
+| ------- | ------ | -------- | ---------------- | ------- |
+| success | string | 是       | 测量报告接收成功 | success |
+
 #### 返回参数示例
 
+```text
+success
 ```
-"success"
-```
-
-> P.S. 实际请求参数根据客户定制指标内容会有所不同。
