@@ -2,12 +2,12 @@
 
 ## 请求流程
 
-1. **`Scale Device` ----> `WSP Mini Server`**
+### **1. `Scale Device` ----> `WSP Mini Server`**
 
 + 体脂秤设备（Scale Device）在WiFi模式下，通过HTTP请求上传测量数据到中转服务器（WSP Mini Server）；
 + 中转服务器（WSP Mini Server）解析体脂秤设备（Scale Device）上传的测量数据，并响应处理结果给体脂秤设备（Scale Device）——测量成功或失败。
 
-2. **`WSP Mini Server`  <---->  `Client Server`**
+### **2. `WSP Mini Server`  ---->  `Client Server`**
 
 + 中转服务器（WSP Mini Server）通过HTTP请求从客户服务器（Client Server）获取该体脂秤设备（Scale Device）绑定的用户列表；
 + 中转服务器（WSP Mini Server）根据体脂秤设备（Scale Device）上传的测量数据以及从客户服务器（Client Server）获取的用户信息生成详细的身体指标报告；
@@ -212,3 +212,30 @@ Client Server提供URL，如：https://www.client-server-domain.com/measurements
 ```text
 success
 ```
+
+## 鉴权方式
+
+#### 令牌
+
+WSP Mini Server向Client Server的接口每一次发起HTTP请求时，**请求头**中会携带JWT令牌作为鉴权凭证。
+
+示例：
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsImFsZ29yaXRobSI6IkhTMjU2IiwidHlwIjoiSldUIn0.eyJpc3MiOiJMTzhkZnlLSXdVdGRva0E4NVJaRk5UTzhCeUF2aDI5QiIsImlhdCI6MTYzMDk5NzMzNSwidXNlcl9pZCI6NDY1fQ.kbskDz_gBbswKaiNWSiEhvozHdrzm7vzlKWEGQn7SXk
+```
+
+#### 加密方式：
+
+JWT作为Token载体，加密算法为HS256，payload说明：
+
+- appid：Client Server提供的小程序APPID
+- iss：签发人
+- iat：签发时间戳
+
+#### 密钥：
+
+```
+Client Server提供secret
+```
+
