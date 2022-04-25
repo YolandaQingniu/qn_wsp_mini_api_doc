@@ -136,7 +136,7 @@ POST
 | - bone               | double  | 是       | 骨量(kg)                                                     | 2.62                                             |
 | - protein            | double  | 是       | 蛋白质占比(%)                                                | 18.4                                             |
 | - score              | double  | 是       | 健康分数                                                     | 96.0                                             |
-| - body_age           | integer | 是       | 体年龄                                                       | 18                                               |
+| - bodyage            | integer | 是       | 体年龄                                                       | 18                                               |
 | - body_shape         | integer | 是       | 体型                                                         | 4                                                |
 | - cardiac_index      | double  | 是       | 心脏指数                                                     | 3.3                                              |
 | -fatty_liver_risk    | integer | 否       | 脂肪肝风险等级                                               | 0                                                |
@@ -181,7 +181,7 @@ Client Server提供URL，如：https://www.client-server-domain.com/measurements
       "bone": 2.51,
       "protein": 19.5,
       "score": 96.0,
-      "body_age": 18,
+      "bodyage": 18,
       "body_shape": 4,
       "cardiac_index": 3.3,
       "fatty_liver_risk": 0,
